@@ -1,14 +1,17 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status-codes";
 import { UserServices } from "./user.service";
 import { catchAsync } from "../../utils/catchAsync";
-import { get } from "http";
 import { sendResponse } from "../../utils/sendResponse";
+
 
 // CreateUser with CatchAsync utility function
 const createUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const user = await UserServices.createUser(req.body);
+    
     // res.status(httpStatus.CREATED).json({
     //   message: "User created successfully",
     //   user,
@@ -20,6 +23,25 @@ const createUser = catchAsync(
       message: "User created successfully",
       data: user,
       
+    });
+  }
+);
+
+// Update User
+const updateUser = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.params.id;
+
+    const verifiedToken = req.user
+    const payload = req.body;
+
+    const user = await UserServices.updateUser(userId, payload, verifiedToken);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "User updated successfully",
+      data: user,
     });
   }
 );
@@ -66,9 +88,10 @@ const getAllUsers = catchAsync(
   }
 );
 
-export const userControllers = {
+export const UserControllers = {
   createUser,
   getAllUsers,
+  updateUser
 };
 
 // Step-1 Route matching >> Step-2 Controller matching >>>
