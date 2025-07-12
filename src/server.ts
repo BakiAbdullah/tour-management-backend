@@ -3,6 +3,7 @@ import { Server } from "http";
 import mongoose from "mongoose";
 import app from "./app";
 import { envVars } from "./app/config/env";
+import { seedSuperAdmin } from "./app/utils/seedSuperAdmin";
 
 let server: Server;
 
@@ -19,8 +20,12 @@ const startServer = async () => {
   }
 };
 
-startServer();
-
+// IIFE: Immediately Invoked Function Expression
+(async () => {
+  await startServer();
+  await seedSuperAdmin();
+})();
+  
 //! Handling Signal termination
 process.on("SIGTERM", () => {
   console.log("SIGTERM signal received. Shutting down gracefully...");

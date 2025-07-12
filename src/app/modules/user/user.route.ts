@@ -1,12 +1,29 @@
 import { Router } from "express";
-import { userControllers } from "./user.controller";
-
+import { UserControllers } from "./user.controller";
+import { createUserZodSchema, updateUserZodSchema } from "./user.validation";
+import { validateRequest } from "../../middlewares/validatedRequest";
+import { checkAuth } from "../../middlewares/checkAuth";
+import { Role } from "./user.interface";
 
 const router = Router();
 
-// Final routes for user registration
-router.post("/register", userControllers.createUser);
-router.get("/all-users", userControllers.getAllUsers);
+// Last Step: Final routes for user registration
+router.post(
+  "/register",
+  validateRequest(createUserZodSchema),
+  UserControllers.createUser
+);
 
-
-export const UserRoutes = router; 
+router.get(
+  "/all-users",
+  checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
+  UserControllers.getAllUsers
+);
+router.patch(
+  "/:id",
+  validateRequest(updateUserZodSchema),
+  checkAuth(...Object.values(Role)),
+  UserControllers.updateUser
+);
+// api/v1/user/:id
+export const UserRoutes = router;

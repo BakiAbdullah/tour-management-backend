@@ -11,7 +11,7 @@ export enum Role {
  * email, password / google authentication
  */
 export interface IAuthProvider {
-  provider: string; // "Google" | "credentials" ;
+  provider: "google" | "credentials"; // "Google" | "credentials" ;
   providerId: string; // unique id from the provider
 }
 
@@ -30,7 +30,7 @@ export interface IUser {
   address?: string;
   isDeleted?: string;
   isActive?: IsActive;
-  isVerified?: string;
+  isVerified?: boolean;
   role: Role;
   auths: IAuthProvider[];
   bookings?: Types.ObjectId[];
