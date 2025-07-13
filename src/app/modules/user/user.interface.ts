@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { Types } from "mongoose";
 
 export enum Role {
@@ -7,7 +8,7 @@ export enum Role {
   GUIDE = "GUIDE",
 }
 
-/** Auth Providers
+/** Auth Providers Methods
  * email, password / google authentication
  */
 export interface IAuthProvider {
@@ -22,6 +23,7 @@ export enum IsActive {
 }
 
 export interface IUser {
+  _id?: Types.ObjectId;
   name: string;
   email: string;
   password?: string;

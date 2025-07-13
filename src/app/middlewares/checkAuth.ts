@@ -3,6 +3,8 @@ import { envVars } from "../config/env";
 import AppError from "../errorHelpers/AppError";
 import { verifyToken } from "../utils/jwt";
 import httpStatus from "http-status-codes";
+import { User } from "../modules/user/user.model";
+import { IsActive } from "../modules/user/user.interface";
 
 export const checkAuth =
   (...authRoles: string[]) =>
@@ -19,6 +21,29 @@ export const checkAuth =
 
       if (!verifiedToken) {
         throw new AppError(httpStatus.UNAUTHORIZED, "Invalid access token");
+      }
+
+      // Check if user exists or its status is Deleted, Blocked or Inactive
+      const isUserExist = await User.findOne({ email: verifiedToken.email });
+      
+      if (!isUserExist) {
+        throw new AppError(
+          httpStatus.BAD_REQUEST,
+          "User does not exist with this email!"
+        );
+      }
+
+      if (
+        isUserExist.isActive === IsActive.BLOCKED ||
+        isUserExist.isActive === IsActive.INACTIVE
+      ) {
+        throw new AppError(
+          httpStatus.BAD_REQUEST,
+          "User is blocked or inactive!"
+        );
+      }
+      if (isUserExist.isDeleted) {
+        throw new AppError(httpStatus.BAD_REQUEST, "User is deleted!");
       }
 
       if (!authRoles.includes(verifiedToken.role)) {
