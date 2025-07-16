@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { NextFunction, Request, Response } from "express";
 
 type TAsyncHandler = (
@@ -9,7 +10,6 @@ type TAsyncHandler = (
 export const catchAsync =
   (fn: TAsyncHandler) => (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch((err) => {
-      console.log("Error occurred in CatchAsync:", err);
       next(err);
     });
   };
