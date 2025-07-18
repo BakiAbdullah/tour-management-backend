@@ -9,3 +9,5 @@
 // 3. Service: The controller calls the service function to handle the business logic
 // 4. Model: The service interacts with the model to perform database operations
 // 5. Database: The model communicates with the database to create, read, update, or delete data
+
+
