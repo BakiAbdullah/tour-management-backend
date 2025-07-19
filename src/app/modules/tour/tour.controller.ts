@@ -22,7 +22,7 @@ const getAllTours = catchAsync(async (req: Request, res: Response) => {
     success: true,
     message: "Tours retrieved successfully",
     data: result.data,
-    meta: result.meta,
+    meta: result?.meta,
   });
 });
 

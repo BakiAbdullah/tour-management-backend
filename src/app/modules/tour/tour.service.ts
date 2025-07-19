@@ -1,9 +1,7 @@
-// import { QueryBuilder } from "../../utils/QueryBuilder";
-// import { tourSearchableFields } from "./tour.constant";
-import { excludeField } from "../../constants";
-import { tourSearchableFields } from "./tour.constant";
 import { ITour, ITourType } from "./tour.interface";
 import { Tour, TourType } from "./tour.model";
+import { tourSearchableFields } from "./tour.constant";
+import { QueryBuilder } from "../../utils/QueryBuilder";
 
 const createTour = async (payload: ITour) => {
   const existingTour = await Tour.findOne({ title: payload.title });
@@ -94,73 +92,28 @@ const createTour = async (payload: ITour) => {
 // };
 
 const getAllTours = async (query: Record<string, string>) => {
-  // const queryBuilder = new QueryBuilder(Tour.find(), query);
+  
+  const queryBuilder = new QueryBuilder(Tour.find(), query);
 
-  // const tours = await queryBuilder
-  //   .search(tourSearchableFields)
-  //   .filter()
-  //   .sort()
-  //   .fields()
-  //   .paginate();
+  const tours = await queryBuilder
+    .search(tourSearchableFields)
+    .filter()
+    .sort()
+    .fields()
+    .paginate()
 
-  // // const meta = await queryBuilder.getMeta()
+  // const meta = queryBuilder.getMeta()
 
-  // const [data, meta] = await Promise.all([
-  //   tours.build(),
-  //   queryBuilder.getMeta(),
-  // ]);
 
-  const filter = query;
-  const searchTerm = query.searchTerm || "";
-  const sort = query.sort || "-createdAt";
-  // Field filtering
-  const fields = query.fields?.split(",").join(" ") || "";
-  const page = Number(query.page) || 1;
-  const limit = Number(query.limit) || 10;
-  const skip = (page - 1) * limit;
-
-  // exclude searchTerm and sort from filter otherwise it will be used in the query
-  for (const field of excludeField) {
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete filter[field];
-  }
-
-  const searchQuery = {
-    $or: tourSearchableFields.map((field) => ({
-      [field]: { $regex: searchTerm, $options: "i" },
-    })),
-  };
-
-  // [][][](skip)[][][][][][]
-  // [][][](limit)[remove][remove][remove][remove]
-
-  // 1 page => [1][1][1][1][1][1][1][1][1][1] (skip = 0 limit = 10)
-  // 2 page => [1][1][1][1][1][1][1][1][1][1]=>skip=>[2][2][2][2][2][2][2][2][2][2]<=limit (skip = 10 limit = 10)
-  // 3 page => [1][1][1][1][1][1][1][1][1][1]=>skip=>[2][2][2][2][2][2][2][2][2][2]<=limit (skip = 20 limit = 10)
-  // skip = (page -1) * 10 = 30
-  // ?page=3&limit=10
-
-  const tours = await Tour.find(searchQuery)
-    .find(filter)
-    .sort(sort)
-    .select(fields)
-    .skip(skip)
-    .limit(limit);
-
-  // location = Dhaka (Filtering, Exact match)
-  // search = Golf (Searching, Partial match)
-
-  const totalTours = await Tour.countDocuments();
-
-  const meta = {
-    page,
-    limit,
-    total: totalTours,
-  };
+  //? The `Promise.all` is used to run both the query to get the tours and the query to get the meta information in parallel. This improves performance by reducing the overall execution time.
+  const [data, meta] = await Promise.all([
+    tours.build(),
+    queryBuilder.getMeta(),
+  ])
 
   return {
-    data: tours,
-    meta: meta
+    data,
+    meta
   };
 };
 
