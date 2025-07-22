@@ -28,8 +28,8 @@ export interface IUser {
   email: string;
   password?: string;
   phone?: string;
-  picture?: string;
   address?: string;
+  picture?: string;
   isDeleted?: string;
   isActive?: IsActive;
   isVerified?: boolean;
