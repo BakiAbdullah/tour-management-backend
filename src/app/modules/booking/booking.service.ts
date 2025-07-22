@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import AppError from "../../errorHelpers/AppError";
 import httpstatus from "http-status-codes";
 import { PAYMENT_STATUS } from "../payment/payment.interface";
@@ -11,10 +9,8 @@ import { Booking } from "./booking.model";
 import { Tour } from "../tour/tour.model";
 import { SSLService } from "../sslCommerz/sslCommerz.service";
 import { ISSLCommerz } from "../sslCommerz/sslCommerz.interface";
+import { getTransactionId } from "../../utils/getTransactionID";
 
-const getTransactionId = () => {
-  return `TrxID_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-};
 
 
 const createBooking = async (payload: Partial<IBooking>, userId: string) => {
@@ -74,7 +70,7 @@ const createBooking = async (payload: Partial<IBooking>, userId: string) => {
       .populate("user", "name email phone address")
       .populate("tour", "title costFrom")
       .populate("payment");
-    
+
     const userAddress = (updatedBooking?.user as any).address;
     const userEmail = (updatedBooking?.user as any).email;
     const userPhoneNumber = (updatedBooking?.user as any).phone;
@@ -86,9 +82,9 @@ const createBooking = async (payload: Partial<IBooking>, userId: string) => {
       email: userEmail,
       phone: userPhoneNumber,
       amount: amount,
-      transactionId: transactionId
-    }
-    
+      transactionId: transactionId,
+    };
+
     // SSL Payment
     const sslPayment = await SSLService.sslPaymentInit(sslPayload);
 
@@ -110,30 +106,56 @@ const createBooking = async (payload: Partial<IBooking>, userId: string) => {
   }
 };
 // SSLCommerz Payment Flow ~~~
-// Scenario 2: if payment is successful 
+// Scenario 2: if payment is successful
 // Frontend(localhost:5173) - User - Tour - Booking (Pending) - Payment(unpaid) --> SSLComerze page --> Payment Complete --> Backend(localhost:5000/api/v1/payment/success) --> Update Payment(Paid) and Booking status(Confirmed) --> Redirect to success page, Frontend(localhost:5173/payment/success)
 
 //! Scenario 2: if something goes wrong in the payment process
 // Frontend(localhost:5173) - User - Tour - Booking (Pending) - Payment(unpaid) --> SSLComerz page --> Payment Failed / canceled --> Backend(localhost:5000/api/v1/payment/fail) -> Update Payment(Failed) and Booking status(Canceled / Failed) --> Redirect to failed page, Frontend(localhost:5173/payment/failed)
 
-const getUserBookings = async (slug: string) => {
+const getUserBookings = async (userId: string) => {
+  const userBookings = await Booking.find({ user: userId });
+  if (!userBookings || userBookings.length === 0) {
+    throw new AppError(httpstatus.NOT_FOUND, "No bookings found for this user");
+  }
   return {
-    data: Booking,
+    data: userBookings,
   };
 };
 
-const getSingleBooking = async (slug: string) => {
+const getSingleBooking = async (bookingId: string) => {
+  const singleBooking = await Booking.findById(bookingId);
+
+  if (!singleBooking) {
+    throw new AppError(httpstatus.NOT_FOUND, "Booking not found");
+  }
   return {
-    data: Booking,
+    data: singleBooking,
   };
 };
 
-const updateBookingStatus = async (id: string, payload: Partial<IBooking>) => {
-  return "";
+const updateBookingStatus = async (
+  bookingId: string,
+  payload: Partial<IBooking>
+) => {
+  const updatedStatus = payload.status;
+  const updatedBooking = await Booking.findByIdAndUpdate(
+    bookingId,
+    { status: updatedStatus },
+    { new: true, runValidators: true }
+  );
+  if (!updatedBooking) {
+    throw new AppError(httpstatus.NOT_FOUND, "Booking not found");
+  }
+  return {
+    data: updatedBooking,
+  };
 };
 
 const getAllBookings = async () => {
-  return {};
+  const allBookings = await Booking.find();
+  return {
+    data: allBookings,
+  };
 };
 
 export const BookingService = {
