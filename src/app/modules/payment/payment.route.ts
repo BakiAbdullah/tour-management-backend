@@ -3,7 +3,7 @@ import { PaymentController } from "./payment.controller";
 
 const router = Router();
 
-
+// Redirect urls, we are not hitting these endpoints directly
 router.post("/init-payment/:bookingId", PaymentController.initPayment);
 router.post("/success", PaymentController.paymentSuccess);
 router.post("/fail", PaymentController.paymentFail);
