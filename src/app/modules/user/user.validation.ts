@@ -26,14 +26,12 @@ export const createUserZodSchema = z.object({
     .string({ invalid_type_error: "Phone must be a string!" })
     .regex(/^(?:\+8801\d{9}|01\d{9})$/, {
       message: "Invalid phone number format! Number is for Bangladesh only.",
-    })
-    .optional(),
+    }),
   address: z
     .string({ invalid_type_error: "Address must be a string!" })
     .max(200, {
       message: "Address can not exceed 200 characters!",
-    })
-    .optional(),
+    }),
 });
 
 export const updateUserZodSchema = z.object({
