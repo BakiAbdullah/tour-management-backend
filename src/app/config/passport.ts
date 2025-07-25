@@ -9,7 +9,7 @@ import {
 } from "passport-google-oauth20";
 import { envVars } from "./env";
 import { User } from "../modules/user/user.model";
-import { Role } from "../modules/user/user.interface";
+import { IsActive, Role } from "../modules/user/user.interface";
 import { Strategy as LocalStrategy } from "passport-local";
 import bcryptjs from "bcryptjs";
 
@@ -27,6 +27,28 @@ passport.use(
         if (!isUserExist) {
           return done(null, false, {
             message: "User does not exist!",
+          });
+        }
+
+        if (isUserExist.isVerified === false) {
+          return done(null, false, {
+            message: "User is not verified!",
+          });
+        }
+
+        if (
+          isUserExist.isActive === IsActive.BLOCKED ||
+          isUserExist.isActive === IsActive.INACTIVE
+        ) {
+          //* throw new AppError(httpStatus.BAD_REQUEST, "User is blocked or inactive!");
+          return done(null, false, {
+            message: "User is blocked or inactive!",
+          });
+        }
+        if (isUserExist.isDeleted) {
+          //* throw new AppError(httpStatus.BAD_REQUEST, "User is deleted!");
+          return done(null, false, {
+            message: "User is deleted!",
           });
         }
 
@@ -90,10 +112,31 @@ passport.use(
           });
         }
 
-        let user = await User.findOne({ email });
+        let isUserExist = await User.findOne({ email });
 
-        if (!user) {
-          user = await User.create({
+        if (isUserExist && !isUserExist.isVerified) {
+        return done(null, false, { message: "User is not verified!" });
+        }
+
+        if (
+          isUserExist &&
+          (isUserExist.isActive === IsActive.BLOCKED ||
+            isUserExist.isActive === IsActive.INACTIVE)
+        ) {
+          //* throw new AppError(httpStatus.BAD_REQUEST, "User is blocked or inactive!");
+          return done(null, false, {
+            message: "User is blocked or inactive!",
+          });
+        }
+        if (isUserExist && isUserExist.isDeleted) {
+          //* throw new AppError(httpStatus.BAD_REQUEST, "User is deleted!");
+          return done(null, false, {
+            message: "User is deleted!",
+          });
+        }
+
+        if (!isUserExist) {
+          isUserExist = await User.create({
             email,
             name: profile?.displayName,
             picture: profile?.photos?.[0]?.value,
@@ -108,7 +151,7 @@ passport.use(
           });
         }
 
-        return done(null, user);
+        return done(null, isUserExist);
       } catch (error) {
         console.error("Error during Google authentication:", error);
         return done(error);

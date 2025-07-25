@@ -21,13 +21,13 @@ const credentialsLogin = catchAsync(
     passport.authenticate("local", async (err: any, user: any, info: any) => {
       if (err) {
         // ❌❌❌
-        //* throw new AppError(400, 'message'); 
+        //* throw new AppError(400, 'message');
         // return new AppError(401, err);
         // next(err)
-        
+
         // ✅✅✅
         // return next(err);
-        return next(new AppError(401, err));
+        return next(new AppError(err.statusCode || 401, err.message));
       }
 
       if (!user) {
@@ -144,6 +144,43 @@ const resetPassword = catchAsync(
   }
 );
 
+const setPassword = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { password } = req.body;
+    const decodedToken = req.user as JwtPayload;
+
+    await AuthServices.setPassword(decodedToken.userId, password);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Password changed successfully!",
+      data: null,
+    });
+  }
+);
+
+const changePassword = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const oldPassword = req.body.oldPassword;
+    const newPassword = req.body.newPassword;
+    const decodedToken = req.user;
+
+    await AuthServices.resetPassword(
+      oldPassword,
+      newPassword,
+      decodedToken as JwtPayload
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Password reset successfully!",
+      data: null,
+    });
+  }
+);
+
 // Function to handle Google OAuth callback
 const googleCallbackController = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -169,6 +206,8 @@ export const AuthControllers = {
   credentialsLogin,
   getNewAccessToken,
   logout,
+  changePassword,
   resetPassword,
+  setPassword,
   googleCallbackController,
 };

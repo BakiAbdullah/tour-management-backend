@@ -12,7 +12,6 @@ import { ISSLCommerz } from "../sslCommerz/sslCommerz.interface";
 import { getTransactionId } from "../../utils/getTransactionID";
 
 
-
 const createBooking = async (payload: Partial<IBooking>, userId: string) => {
   const transactionId = getTransactionId();
 

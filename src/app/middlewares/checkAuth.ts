@@ -25,12 +25,16 @@ export const checkAuth =
 
       // Check if user exists or its status is Deleted, Blocked or Inactive
       const isUserExist = await User.findOne({ email: verifiedToken.email });
-      
+
       if (!isUserExist) {
         throw new AppError(
           httpStatus.BAD_REQUEST,
           "User does not exist with this email!"
         );
+      }
+
+      if (isUserExist.isVerified === false) {
+        throw new AppError(httpStatus.BAD_REQUEST, "User is not verified!");
       }
 
       if (
@@ -53,6 +57,7 @@ export const checkAuth =
         );
       }
 
+      // Attach user information to the request object **********
       req.user = verifiedToken;
 
       next();
