@@ -3,18 +3,19 @@ import { AuthControllers } from "./auth.controller";
 import { checkAuth } from "../../middlewares/checkAuth";
 import { Role } from "../user/user.interface";
 import passport from "passport";
+import { envVars } from "../../config/env";
 
 const router = Router();
 
 router.post("/login", AuthControllers.credentialsLogin);
 router.post("/refresh-token", AuthControllers.getNewAccessToken);
 router.post("/logout", AuthControllers.logout);
-router.post(
-  "/reset-password",
-  checkAuth(...Object.values(Role)),
-  AuthControllers.resetPassword
-);
-// router.post("/forgot-password", AuthControllers.forgotPassword);
+router.post("/change-password", AuthControllers.changePassword);
+router.post("/set-password", checkAuth(...Object.values(Role)), AuthControllers.setPassword);
+router.post("/forgot-password", AuthControllers.forgotPassword);
+router.post("/reset-password", checkAuth(...Object.values(Role)), AuthControllers.resetPassword);
+// Frontend -> Forgot Password-> email+Backend -> user status check -> short expiration token(10m)-> email with reset link -> Frontend -> Reset Password -> Backend -> change password
+
 
 router.get(
   "/google",
@@ -27,9 +28,10 @@ router.get(
     })(req, res, next);
   }
 );
+
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
+  passport.authenticate("google", { failureRedirect: `${envVars.FRONTEND_URL}/login?error=There is some issues with your account. Please contact to our support team.` }),
   AuthControllers.googleCallbackController
 );
 

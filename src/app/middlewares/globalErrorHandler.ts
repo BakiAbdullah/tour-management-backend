@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -9,8 +10,20 @@ import { handleValidationError } from "../errors/handleValidationError";
 import { handleCastError } from "../errors/handleCastError";
 import { IErrorSource } from "../interfaces/error";
 import { handleZodError } from "../errors/handleZodError";
+import { deleteImageFromCloudinary } from "../config/cloudinary.config";
 
-export const globalErrorHandler = (
+/**
+ * Global error handling middleware for Express applications.
+ *
+ * Handles and formats errors from various sources including Mongoose, Zod, and custom application errors.
+ * - Logs errors in development mode.
+ * - Deletes uploaded files from Cloudinary if present in the request.
+ * - Handles duplicate key errors, cast errors, validation errors (Mongoose & Zod), and custom AppError instances.
+ * - Returns a standardized error response with status code, message, error sources, and stack trace (in development).
+ *
+ * @returns Sends a JSON response with error details.
+ */
+export const globalErrorHandler = async (
   err: any,
   req: Request,
   res: Response,
@@ -21,6 +34,18 @@ export const globalErrorHandler = (
   let errorSources: IErrorSource[] = [];
   if (envVars.NODE_ENV === "development") {
     console.log(err);
+  }
+
+  //! DELETE images from Cloudinary if any error occurs
+  if (req.file) {
+    await deleteImageFromCloudinary(req.file.path);
+  }
+
+  if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+    const imgUrl = (req.files as Express.Multer.File[]).map(
+      (file) => file.path
+    );
+    await Promise.all(imgUrl.map((img) => deleteImageFromCloudinary(img)));
   }
 
   // Handling specific error types for Mongoose && ZOD 🔴🟡🟢

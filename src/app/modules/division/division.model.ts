@@ -5,7 +5,7 @@ const divisionSchema = new Schema<IDivision>(
   {
     name: { type: String, required: true, unique: true },
     slug: { type: String, unique: true },
-    thumnail: { type: String },
+    thumbnail: { type: String },
     description: { type: String },
   },
   {
@@ -31,26 +31,24 @@ divisionSchema.pre("save", async function (next) {
   next();
 });
 
-divisionSchema.pre('findOneAndUpdate', async function (next) {
+divisionSchema.pre("findOneAndUpdate", async function (next) {
   const division = this.getUpdate() as Partial<IDivision>;
 
   if (division?.name) {
-        const baseSlug = division.name.toLowerCase().split(" ").join("-");
-        let slug = `${baseSlug}-division`;
+    const baseSlug = division.name.toLowerCase().split(" ").join("-");
+    let slug = `${baseSlug}-division`;
 
-        let counter = 0;
-        while (await Division.exists({ slug })) {
-          slug = `${slug}-${counter++}`; // dhaka-division-2
-        }
+    let counter = 0;
+    while (await Division.exists({ slug })) {
+      slug = `${slug}-${counter++}`; // dhaka-division-2
+    }
 
-        division.slug = slug;
+    division.slug = slug;
   }
-  
+
   this.setUpdate(division);
-  
+
   next();
-})
-
-
+});
 
 export const Division = model<IDivision>("Division", divisionSchema);

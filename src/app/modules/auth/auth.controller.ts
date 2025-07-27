@@ -21,13 +21,13 @@ const credentialsLogin = catchAsync(
     passport.authenticate("local", async (err: any, user: any, info: any) => {
       if (err) {
         // ❌❌❌
-        //* throw new AppError(400, 'message'); 
+        //* throw new AppError(400, 'message');
         // return new AppError(401, err);
         // next(err)
-        
+
         // ✅✅✅
         // return next(err);
-        return next(new AppError(401, err));
+        return next(new AppError(err.statusCode || 401, err.message));
       }
 
       if (!user) {
@@ -125,11 +125,57 @@ const logout = catchAsync(
 
 const resetPassword = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
+    const decodedToken = req.user;
+
+    await AuthServices.resetPassword(req.body, decodedToken as JwtPayload);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Password reset successfully!",
+      data: null,
+    });
+  }
+);
+
+const forgotPassword = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { email } = req.body;
+
+    await AuthServices.forgotPassword(email);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Password reset link sent successfully!",
+      data: null,
+    });
+  }
+);
+
+const setPassword = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { password } = req.body;
+    const decodedToken = req.user as JwtPayload;
+
+    await AuthServices.setPassword(decodedToken.userId, password);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Password changed successfully!",
+      data: null,
+    });
+  }
+);
+
+const changePassword = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     const oldPassword = req.body.oldPassword;
     const newPassword = req.body.newPassword;
     const decodedToken = req.user;
 
-    await AuthServices.resetPassword(
+    await AuthServices.changePassword(
       oldPassword,
       newPassword,
       decodedToken as JwtPayload
@@ -169,6 +215,9 @@ export const AuthControllers = {
   credentialsLogin,
   getNewAccessToken,
   logout,
+  changePassword,
   resetPassword,
+  setPassword,
+  forgotPassword,
   googleCallbackController,
 };
