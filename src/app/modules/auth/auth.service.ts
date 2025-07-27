@@ -1,5 +1,4 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from "http-status-codes";
 import { User } from "../user/user.model";
 import AppError from "../../errorHelpers/AppError";
@@ -7,7 +6,9 @@ import bcryptjs from "bcryptjs";
 import { createNewAccessTokenWithRefreshToken } from "../../utils/userTokens";
 import { envVars } from "../../config/env";
 import { JwtPayload } from "jsonwebtoken";
-import { IAuthProvider } from "../user/user.interface";
+import { IAuthProvider, IsActive } from "../user/user.interface";
+import jwt from "jsonwebtoken";
+import { sendEmail } from "../../utils/sendEmail";
 
 // Function to handle user login with credentials (We will use passport.js for this, passport js will handling our service logics) ❌
 
@@ -55,27 +56,79 @@ const getNewAccessToken = async (refreshToken: string) => {
   };
 };
 
+const forgotPassword = async (email: string) => {
+  const isUserExist = await User.findOne({ email });
+
+  if (!isUserExist) {
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      "User does not exist with this email!"
+    );
+  }
+
+  if (!isUserExist.isVerified) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User is not verified!");
+  }
+
+  if (
+    isUserExist.isActive === IsActive.BLOCKED ||
+    isUserExist.isActive === IsActive.INACTIVE
+  ) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User is blocked or inactive!");
+  }
+
+  if (isUserExist.isDeleted) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User is deleted!");
+  }
+
+  const jwtPayload = {
+    userId: isUserExist._id,
+    email: isUserExist.email,
+    role: isUserExist.role,
+  };
+
+  const resetToken = jwt.sign(jwtPayload, envVars.JWT_SECRET as string, {
+    expiresIn: "10m",
+  });
+  const resetLink = `${envVars.FRONTEND_URL}/reset-password?id=${isUserExist._id}&token=${resetToken}`;
+
+  // Here we would send the reset link to the user's email by using a mail service (nodemailer)
+
+  sendEmail({
+    to: isUserExist.email,
+    subject: "Password Reset Link",
+    templateName: "forgetPassword",
+    templateData: {
+      name: isUserExist.name,
+      resetUrlLink: resetLink,
+    },
+  });
+
+  /**
+   * http://localhost:5173/reset-password?id=6883508f679bde07e02e7705&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODgzNTA4ZjY3OWJkZTA3ZTAyZTc3MDUiLCJlbWFpbCI6ImJha2lhYmR1bGxhaDk2QGdtYWlsLmNvbSIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzUzNDM2NjQ3LCJleHAiOjE3NTM0MzcyNDd9.GClVzE8CINkj08gx1vGCZ-nuUlIt12W8hYPMGiJNZ0g
+   */
+};
+
 const resetPassword = async (
-  oldPassword: string,
-  newPassword: string,
+  payload: Record<string, any>,
   decodedToken: JwtPayload
 ) => {
-  // const user = await User.findById(decodedToken.userId);
-  // const isOldPasswordMatched = await bcryptjs.compare(
-  //   oldPassword,
-  //   user?.password as string
-  // );
-  // if (!isOldPasswordMatched) {
-  //   throw new AppError(httpStatus.UNAUTHORIZED, "Old password does not match!");
-  // }
-  // if (!user) {
-  //   throw new AppError(httpStatus.NOT_FOUND, "User not found!");
-  // }
-  // user.password = await bcryptjs.hash(
-  //   newPassword,
-  //   Number(envVars.BCRYPT_SALT_ROUNDS)
-  // );
-  // await user.save();
+  if (payload.id !== decodedToken.userId) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized!");
+  }
+
+  const isUserExist = await User.findById(decodedToken.userId);
+  if (!isUserExist) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found!");
+  }
+  const hashedPassword = await bcryptjs.hash(
+    payload.newPassword,
+    Number(envVars.BCRYPT_SALT_ROUNDS)
+  );
+
+  isUserExist.password = hashedPassword;
+
+  await isUserExist.save();
 };
 
 const setPassword = async (userId: string, plainPassword: string) => {
@@ -84,7 +137,7 @@ const setPassword = async (userId: string, plainPassword: string) => {
     throw new AppError(httpStatus.NOT_FOUND, "User not found!");
   }
 
-   // If the user has a password, we will not allow them to set a new password
+  // If the user has a password, we will not allow them to set a new password
   if (
     user.password &&
     user.auths.some((providerObject) => providerObject.provider === "google")
@@ -147,5 +200,6 @@ export const AuthServices = {
   getNewAccessToken,
   resetPassword,
   setPassword,
+  forgotPassword,
   changePassword,
 };
