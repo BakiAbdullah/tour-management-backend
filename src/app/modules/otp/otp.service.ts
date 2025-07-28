@@ -1,16 +1,10 @@
-import crypto from "crypto";
 import { redisClient } from "../../config/redis.config";
 import { sendEmail } from "../../utils/sendEmail";
 import AppError from "../../errorHelpers/AppError";
 import { User } from "../user/user.model";
+import { generateOTP } from "../../utils/generateOTP";
 
 const OTP_EXPIRATION = 2 * 60; // 2 minutes in seconds
-
-const generateOTP = (length = 6) => {
-  // const otp = crypto.randomInt(Math.pow(10, length - 1), Math.pow(10, length));
-  const otp = crypto.randomInt(10 ** (length - 1), 10 ** length).toString(); // Generates a 6-digit OTP
-  return otp;
-};
 
 const sendOtp = async (email: string, name: string) => {
   const user = await User.findOne({ email });

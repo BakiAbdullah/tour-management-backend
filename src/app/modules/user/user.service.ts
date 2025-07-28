@@ -44,13 +44,31 @@ const updateUser = async (
   payload: Partial<IUser>,
   decodedToken: JwtPayload
 ) => {
-  const ifUserExist = await User.findById(userId);
 
+  // Check if the user is trying to update their own profile
+  if (decodedToken.role === Role.USER || decodedToken.role === Role.GUIDE) { 
+    if (userId !== decodedToken._id) {
+      throw new AppError(
+        httpStatus.FORBIDDEN,
+        "You are not authorized to perform this action"
+      );
+    }
+  }
+
+  // Check if the user exists
+  const ifUserExist = await User.findById(userId);
   if (!ifUserExist) {
     throw new AppError(httpStatus.NOT_FOUND, "User not found with this id");
   }
 
 
+  if (decodedToken.role === Role.ADMIN && ifUserExist.role === Role.SUPER_ADMIN) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "You are not authorized to assign super admin role"
+    );
+    
+  }
 
   /**
    * email - can not be updated
@@ -67,12 +85,12 @@ const updateUser = async (
       );
     }
 
-    if (payload.role === Role.SUPER_ADMIN && decodedToken.role === Role.ADMIN) {
-      throw new AppError(
-        httpStatus.FORBIDDEN,
-        "You are not authorized to assign super admin role"
-      );
-    }
+    // if (payload.role === Role.SUPER_ADMIN && decodedToken.role === Role.ADMIN) {
+    //   throw new AppError(
+    //     httpStatus.FORBIDDEN,
+    //     "You are not authorized to assign super admin role"
+    //   );
+    // }
   }
 
   if (payload.isActive || payload.isDeleted || payload.isVerified) {
@@ -82,13 +100,6 @@ const updateUser = async (
         "You are not authorized to update this field"
       );
     }
-  }
-
-  if (payload.password) {
-    payload.password = await bcryptjs.hash(
-      payload.password,
-      Number(envVars.BCRYPT_SALT_ROUNDS)
-    );
   }
 
   const newUpdatedUser = await User.findByIdAndUpdate(userId, payload, {

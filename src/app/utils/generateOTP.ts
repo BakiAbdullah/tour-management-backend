@@ -1,0 +1,7 @@
+import crypto from "crypto";
+
+export const generateOTP = (length = 6) => {
+  // const otp = crypto.randomInt(Math.pow(10, length - 1), Math.pow(10, length));
+  const otp = crypto.randomInt(10 ** (length - 1), 10 ** length).toString(); // Generates a 6-digit OTP
+  return otp;
+};

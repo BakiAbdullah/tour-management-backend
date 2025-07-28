@@ -26,10 +26,10 @@ router.get(
 );
 router.get(
   "/:id",
-  checkAuth(...Object.values(Role)),
+  checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
   UserControllers.getSingleUser
 );
-router.patch(
+router.patch( 
   "/:id",
   validateRequest(updateUserZodSchema),
   checkAuth(...Object.values(Role)),
