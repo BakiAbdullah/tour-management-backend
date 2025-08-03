@@ -6,6 +6,7 @@ import { TourRoutes } from "../modules/tour/tour.route";
 import { BookingRoutes } from "../modules/booking/booking.route";
 import { PaymentRoutes } from "../modules/payment/payment.route";
 import { OtpRoutes } from "../modules/otp/otp.route";
+import { StatsRoutes } from "../modules/stats/stats.route";
 
 export const router = Router()
 
@@ -38,10 +39,13 @@ const moduleRoutes = [
     path: "/otp",
     route: OtpRoutes,
   },
+  {
+    path: "/stats",
+    route: StatsRoutes,
+  },
 ];
 
 // Registering all module routes
-// Second version of API
 moduleRoutes.forEach((route) => { 
   router.use(route.path, route.route)
 })
@@ -52,4 +56,3 @@ moduleRoutes.forEach((route) => {
 // router.use("/tour", TourRoutes)
 // router.use("/division", DivisionRoutes)
 // router.use("/booking", BookingRoutes)
-// router.use("/user", UserRoutes)

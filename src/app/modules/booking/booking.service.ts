@@ -75,7 +75,7 @@ const createBooking = async (payload: Partial<IBooking>, userId: string) => {
     const userPhoneNumber = (updatedBooking?.user as any).phone;
     const userName = (updatedBooking?.user as any).name;
 
-    const sslPayload: ISSLCommerz = {
+    const sslPayload: ISSLCommerz = { 
       name: userName,
       address: userAddress,
       email: userEmail,

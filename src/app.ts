@@ -15,7 +15,7 @@ const app = express();
 
 const limiter = rateLimit({ 
   windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 10, // Limit each IP to 10 requests per `window` (here, per 15 minutes).
+  limit: 50, // Limit each IP to 10 requests per `window` (here, per 15 minutes).
 });
 // >>> Apply the rate limiting middleware to all requests.
 app.use(limiter);
@@ -37,8 +37,6 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-
 
 
 // Step 1: Initialize User Routes

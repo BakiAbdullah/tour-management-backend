@@ -8,7 +8,7 @@ import { JwtPayload } from "jsonwebtoken";
 import { QueryBuilder } from "../../utils/QueryBuilder";
 import { userSearchableFields } from "./user.constant";
 
-const createUser = async (payload: Partial<IUser>) => {
+const createUser = async (payload: Partial<IUser>) => { 
   const { email, password, ...rest } = payload;
 
   const isUserExist = await User.findOne({ email });
@@ -136,6 +136,7 @@ const getMe = async (userId: string) => {
     data: user,
   };
 };
+
 const getSingleUser = async (id: string) => {
   const user = await User.findById(id).select("-password");
   return {
